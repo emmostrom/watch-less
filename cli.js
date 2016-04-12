@@ -38,6 +38,14 @@ var argv = require('optimist')
         alias: 'o',
         desc: 'Sets the optimization level for the less compiler, options are: 0, 1, and 2'
     })
+    .option('watch-stdin', {
+        alias: 'w',
+        desc: 'Exits if stdin closes'
+    })
+    .option('once', {
+        alias: 'x',
+        desc: 'Exit after processing files once'
+    })
     .option('help', {
       alias: 'h',
       desc: 'Show this message'
@@ -68,6 +76,8 @@ var options = {
     compress: argv.compress != null,
     optimization: argv.optimization != null ? parseInt(argv.optimization) : 0,
     sourceMap: argv.source_map != null ? true : false
+    watchStdIn: argv['watch-stdin'] != null,
+    runOnce: argv.once != null
 };
 
 var parseLessFile = function(input, output){
@@ -143,9 +153,11 @@ walker.on('file', function(root, fileStats, next) {
         // Compile .less file on startup:
         compileLessFile(filePath);
 
-        fs.watchFile(filePath, function(curr, prev){
-            compileLessFile(filePath);
-        });
+        if(!options.runOnce) {
+            fs.watchFile(filePath, function(curr, prev){
+                compileLessFile(filePath);
+            });
+        }
     }
     next();
 });
@@ -153,3 +165,17 @@ walker.on('file', function(root, fileStats, next) {
 walker.on('errors', function(root, nodeStatsArray, next) {
     next();
 });
+
+if(options.runOnce){
+    walker.on("end", function () {
+        process.exit(0);
+    });
+}
+
+if(options.watchStdIn) {
+    process.stdin.on('end', function () {
+        process.exit(0);
+    });
+    process.stdin.resume();
+}
+
