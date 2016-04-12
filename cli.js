@@ -75,7 +75,7 @@ var ignoreList = (function(){
 var options = {
     compress: argv.compress != null,
     optimization: argv.optimization != null ? parseInt(argv.optimization) : 0,
-    sourceMap: argv.source_map != null ? true : false
+    sourceMap: argv.source_map != null ? true : false,
     watchStdIn: argv['watch-stdin'] != null,
     runOnce: argv.once != null
 };
