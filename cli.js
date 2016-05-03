@@ -6,6 +6,9 @@ var path = require('path');
 var walk = require('walk');
 var less = require('less');
 
+var parsing = 0;
+var done = false;
+
 
 var argv = require('optimist')
     .usage('Usage: {OPTIONS}')
@@ -81,6 +84,7 @@ var options = {
 };
 
 var parseLessFile = function(input, output){
+    parsing++;
     return function (e, data) {
         if (e) {
             console.log("lessc: " + e.message);
@@ -114,8 +118,12 @@ var parseLessFile = function(input, output){
                     var fd = fs.openSync(output, "w");
                     fs.writeSync(fd, css, 0, "utf8");
                 }
+                parsing--;
+                checkEnd();
             }, function(error) {
                 less.writeError(error, options);
+                parsing--;
+                checkEnd();
             });
     };
 };
@@ -166,9 +174,15 @@ walker.on('errors', function(root, nodeStatsArray, next) {
     next();
 });
 
+var checkEnd = function(){
+  if(done && parsing == 0 && options.runOnce)
+    process.exit(0);
+}
+
 if(options.runOnce){
     walker.on("end", function () {
-        process.exit(0);
+        done = true;
+        checkEnd();
     });
 }
 
